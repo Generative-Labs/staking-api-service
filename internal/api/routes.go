@@ -11,7 +11,7 @@ func (a *Server) SetupRoutes(r *chi.Mux) {
 	r.Get("/healthcheck", registerHandler(handlers.HealthCheck))
 
 	r.Get("/v1/staker/delegations", registerHandler(handlers.GetStakerDelegations))
-	r.Get("/v1/finality-provider/delegations", registerHandler(handlers.GetFinalityProviderPkHexDelegations))
+	r.Get("/v1/finality-provider/staker-count", registerHandler(handlers.GetStakerCountByFinalityProvider))
 	r.Get("/v1/staker/count", registerHandler(handlers.GetStakerCountByStakerPk))
 	r.Post("/v1/unbonding", registerHandler(handlers.UnbondDelegation))
 	r.Get("/v1/unbonding/eligibility", registerHandler(handlers.GetUnbondingEligibility))

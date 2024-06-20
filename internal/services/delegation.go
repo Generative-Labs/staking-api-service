@@ -77,21 +77,27 @@ func (s *Services) DelegationsByStakerPk(ctx context.Context, stakerPk string, p
 	return delegations, resultMap.PaginationToken, nil
 }
 
-func (s *Services) DelegationsByFinalityProviderPkHex(ctx context.Context, finalityProviderPkHex string, pageToken string) ([]DelegationPublic, string, *types.Error) {
-	resultMap, err := s.DbClient.FindDelegationsByFinalityProviderPkHex(ctx, finalityProviderPkHex, pageToken)
+func (s *Services) DelegationsByFinalityProviderPkHex(ctx context.Context, finalityProviderPkHex string) ([]DelegationPublic, *types.Error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Ctx(ctx).Error().Msgf("DelegationsByFinalityProviderPkHex panic: %v", r)
+		}
+	}()
+
+	resultMap, err := s.DbClient.FindDelegationsByFinalityProviderPkHex(ctx, finalityProviderPkHex)
 	if err != nil {
 		if db.IsInvalidPaginationTokenError(err) {
-			log.Ctx(ctx).Warn().Err(err).Msg("Invalid pagination token when fetching delegations by staker pk")
-			return nil, "", types.NewError(http.StatusBadRequest, types.BadRequest, err)
+			log.Ctx(ctx).Warn().Err(err).Msg("Invalid pagination token when fetching delegations by finality provider")
+			return nil, types.NewError(http.StatusBadRequest, types.BadRequest, err)
 		}
-		log.Ctx(ctx).Error().Err(err).Msg("Failed to find delegations by staker pk")
-		return nil, "", types.NewInternalServiceError(err)
+		log.Ctx(ctx).Error().Err(err).Msg("Failed to find delegations by finality provider")
+		return nil, types.NewInternalServiceError(err)
 	}
-	var delegations []DelegationPublic = make([]DelegationPublic, 0, len(resultMap.Data))
-	for _, d := range resultMap.Data {
+	var delegations = make([]DelegationPublic, 0, len(resultMap))
+	for _, d := range resultMap {
 		delegations = append(delegations, fromDelegationDocument(d))
 	}
-	return delegations, resultMap.PaginationToken, nil
+	return delegations, nil
 }
 
 func (s *Services) StakerCountByStakerPk(ctx context.Context, finalityProviderPkHex string) (int64, *types.Error) {

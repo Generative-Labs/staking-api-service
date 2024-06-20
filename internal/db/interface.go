@@ -18,8 +18,8 @@ type DBClient interface {
 		ctx context.Context, stakerPk string, paginationToken string,
 	) (*DbResultMap[model.DelegationDocument], error)
 	FindDelegationsByFinalityProviderPkHex(
-		ctx context.Context, finalityProviderPkHex string, paginationToken string,
-	) (*DbResultMap[model.DelegationDocument], error)
+		ctx context.Context, finalityProviderPkHex string,
+	) ([]model.DelegationDocument, error)
 	CountDistinctStakerPks(ctx context.Context, finalityProviderPkHex string) (int64, error)
 	SaveUnbondingTx(
 		ctx context.Context, stakingTxHashHex, unbondingTxHashHex, txHex, signatureHex string,

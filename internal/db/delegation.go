@@ -182,28 +182,11 @@ func (db *Database) CountDistinctStakerPks(ctx context.Context, finalityProvider
 	return int64(len(distinctCount)), nil
 }
 
-func (db *Database) FindDelegationsByFinalityProviderPkHex(ctx context.Context, finalityProviderPkHex string, paginationToken string) (*DbResultMap[model.DelegationDocument], error) {
+func (db *Database) FindDelegationsByFinalityProviderPkHex(ctx context.Context, finalityProviderPkHex string) ([]model.DelegationDocument, error) {
 	client := db.Client.Database(db.DbName).Collection(model.DelegationCollection)
 
 	filter := bson.M{"finality_provider_pk_hex": finalityProviderPkHex}
 	options := options.Find().SetSort(bson.M{"staking_tx.start_height": -1}) // Sorting in descending order
-
-	options.SetLimit(db.cfg.MaxPaginationLimit)
-	// Decode the pagination token first if it exist
-	if paginationToken != "" {
-		decodedToken, err := model.DecodePaginationToken[model.DelegationByFinalityProviderPagination](paginationToken)
-		if err != nil {
-			return nil, &InvalidPaginationTokenError{
-				Message: "Invalid pagination token",
-			}
-		}
-		filter = bson.M{
-			"$or": []bson.M{
-				{"finality_provider_pk_hex": finalityProviderPkHex, "staking_tx.start_height": bson.M{"$lt": decodedToken.StakingStartHeight}},
-				{"finality_provider_pk_hex": finalityProviderPkHex, "staking_tx.start_height": decodedToken.StakingStartHeight, "_id": bson.M{"$gt": decodedToken.StakingTxHashHex}},
-			},
-		}
-	}
 
 	cursor, err := client.Find(ctx, filter, options)
 	if err != nil {
@@ -216,5 +199,5 @@ func (db *Database) FindDelegationsByFinalityProviderPkHex(ctx context.Context, 
 		return nil, err
 	}
 
-	return toResultMapWithPaginationToken(db.cfg, delegations, model.BuildDelegationByFinalityProviderPaginationToken)
+	return delegations, nil
 }
