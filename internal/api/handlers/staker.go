@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/rs/zerolog/log"
 	"net/http"
 
 	"github.com/babylonchain/staking-api-service/internal/types"
@@ -31,6 +32,44 @@ func (h *Handler) GetStakerDelegations(request *http.Request) (*Result, *types.E
 	}
 
 	return NewResultWithPagination(delegations, newPaginationKey), nil
+}
+
+func (h *Handler) GetFinalityProviderPkHexDelegations(request *http.Request) (*Result, *types.Error) {
+	finalityProviderPkHex, err := parsePublicKeyQuery(request, "finality_provider_pk_hex")
+	if err != nil {
+		return nil, err
+	}
+	paginationKey, err := parsePaginationQuery(request)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Ctx(request.Context()).Debug().Msgf("GetFinalityProviderPkHexDelegations: finalityProviderPkHex:%s paginationKey:%s",
+		finalityProviderPkHex,
+		paginationKey)
+
+	delegations, newPaginationKey, err := h.services.DelegationsByFinalityProviderPkHex(request.Context(), finalityProviderPkHex, paginationKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResultWithPagination(delegations, newPaginationKey), nil
+}
+
+func (h *Handler) GetStakerCountByStakerPk(request *http.Request) (*Result, *types.Error) {
+	finalityProviderPkHex, err := parsePublicKeyQuery(request, "finality_provider_pk_hex")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Ctx(request.Context()).Debug().Msgf("GetStakerCountByStakerPk: finalityProviderPkHex:%s", finalityProviderPkHex)
+
+	count, err := h.services.StakerCountByStakerPk(request.Context(), finalityProviderPkHex)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewResult(count), nil
 }
 
 // CheckStakerDelegationExist @Summary Check if a staker has an active delegation

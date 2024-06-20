@@ -45,3 +45,21 @@ func BuildDelegationByStakerPaginationToken(d DelegationDocument) (string, error
 	}
 	return token, nil
 }
+
+type DelegationByFinalityProviderPagination struct {
+	//FinalityProviderPkHex string `json:"finality_provider_pk_hex"`
+	StakingTxHashHex   string `json:"staking_tx_hash_hex"`
+	StakingStartHeight uint64 `json:"staking_start_height"`
+}
+
+func BuildDelegationByFinalityProviderPaginationToken(d DelegationDocument) (string, error) {
+	page := &DelegationByFinalityProviderPagination{
+		StakingTxHashHex:   d.StakingTxHashHex,
+		StakingStartHeight: d.StakingTx.StartHeight,
+	}
+	token, err := GetPaginationToken(page)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
