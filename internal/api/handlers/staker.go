@@ -39,14 +39,9 @@ func (h *Handler) GetStakerCountByFinalityProvider(request *http.Request) (*Resu
 	if err != nil {
 		return nil, err
 	}
-	paginationKey, err := parsePaginationQuery(request)
-	if err != nil {
-		return nil, err
-	}
 
-	log.Ctx(request.Context()).Debug().Msgf("GetStakerCountByFinalityProvider: finalityProviderPkHex:%s paginationKey:%s",
-		finalityProviderPkHex,
-		paginationKey)
+	log.Ctx(request.Context()).Debug().Msgf("GetStakerCountByFinalityProvider: finalityProviderPkHex:%s",
+		finalityProviderPkHex)
 
 	delegations, err := h.services.DelegationsByFinalityProviderPkHex(request.Context(), finalityProviderPkHex)
 	if err != nil {
@@ -58,10 +53,41 @@ func (h *Handler) GetStakerCountByFinalityProvider(request *http.Request) (*Resu
 
 	countMap := make(map[string]int)
 	for _, delegation := range delegations {
+		if delegation.State == types.Unbonded.ToString() {
+			continue
+		}
 		countMap[delegation.StakerPkHex]++
 	}
 
 	return NewResult(len(countMap)), nil
+}
+
+func (h *Handler) GetDelegationsCountByFinalityProvider(request *http.Request) (*Result, *types.Error) {
+	finalityProviderPkHex, err := parsePublicKeyQuery(request, "finality_provider_pk_hex")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Ctx(request.Context()).Debug().Msgf("GetDelegationsCountByFinalityProvider-: finalityProviderPkHex:%s",
+		finalityProviderPkHex)
+
+	delegations, err := h.services.DelegationsByFinalityProviderPkHex(request.Context(), finalityProviderPkHex)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Ctx(request.Context()).Debug().Msgf("GetDelegationsCountByFinalityProvider: delegations len:%d",
+		len(delegations))
+
+	countSlice := make([]string, 0)
+	for _, delegation := range delegations {
+		if delegation.State == types.Unbonded.ToString() {
+			continue
+		}
+		countSlice = append(countSlice, delegation.StakerPkHex)
+	}
+
+	return NewResult(len(countSlice)), nil
 }
 
 func (h *Handler) GetStakerCountByStakerPk(request *http.Request) (*Result, *types.Error) {
